@@ -1,6 +1,10 @@
 package config;
 
 import java.sql.*;
+import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class dbConnect {
 
@@ -13,6 +17,38 @@ public class dbConnect {
             System.out.println("Connection Failed: " + e);
         }
         return con;
+    }
+
+    
+    public int addRecordAndGetId(String sql, Object... params) {
+        int generatedKey = 0;
+        try (Connection conn = this.connectDB();
+            
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            
+            for (int i = 0; i < params.length; i++) {
+                
+                pstmt.setObject(i + 1, params[i]); 
+            }
+
+            
+            pstmt.executeUpdate();
+
+          
+            try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    
+                    generatedKey = rs.getInt(1); 
+                }
+            }
+            System.out.println("Record added successfully and ID retrieved!");
+
+        } catch (SQLException e) {
+            System.out.println("Error adding record (with ID retrieval): " + e.getMessage());
+            generatedKey = 0; 
+        }
+        return generatedKey;
     }
 
     public void addRecord(String sql, Object... values) {
@@ -163,7 +199,7 @@ public class dbConnect {
         return records;
     }
 
-    // ✅ FIXED METHOD 1
+   
     public void viewRecords(String Query, String[] headers, String[] columns, int cid) {
         try (Connection conn = this.connectDB();
              PreparedStatement pstmt = conn.prepareStatement(Query)) {
@@ -190,6 +226,33 @@ public class dbConnect {
             System.out.println("Error viewing records: " + e.getMessage());
         }
     }
+    
+   
+     public void ViewRecords(String Query, String[] headers, String[] columns) {
+        try (Connection conn = this.connectDB();
+             PreparedStatement pstmt = conn.prepareStatement(Query);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            System.out.println("--------------------------------------------------------------------------------");
+            for (String header : headers) {
+                System.out.printf("%-20s | ", header);
+            }
+            System.out.println("\n--------------------------------------------------------------------------------");
+
+            while (rs.next()) {
+                for (String col : columns) {
+                    System.out.printf("%-20s | ", rs.getString(col));
+                }
+                System.out.println();
+            }
+
+            System.out.println("--------------------------------------------------------------------------------");
+
+        } catch (SQLException e) {
+            System.out.println("Error viewing records: " + e.getMessage());
+        }
+    }
+
 
     // ✅ FIXED METHOD 2
     public Object getSingleValue(String sqlQuery, String columnName, int fid) {
@@ -246,24 +309,40 @@ public class dbConnect {
             System.out.println("Error viewing category: " + e.getMessage());
         }
     }
-    // Method to hash passwords using SHA-256
-public String hashPassword(String password) {
-    try {
-        java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-        byte[] hashedBytes = md.digest(password.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        
-        // Convert byte array to hex string
-        StringBuilder hexString = new StringBuilder();
-        for (byte b : hashedBytes) {
-            String hex = Integer.toHexString(0xff & b);
-            if (hex.length() == 1) hexString.append('0');
-            hexString.append(hex);
+
+    
+    public String hashPassword(String password) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hashedBytes = md.digest(password.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            
+           
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashedBytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            System.out.println("Error hashing password: " + e.getMessage());
+            return null;
         }
-        return hexString.toString();
-    } catch (java.security.NoSuchAlgorithmException e) {
-        System.out.println("Error hashing password: " + e.getMessage());
-        return null;
     }
-}
-   
+    
+    
+    public int getLastInsertId() {
+        int id = -1;
+        try {
+            String sql = "SELECT last_insert_rowid() AS id"; 
+            List<Map<String, Object>> result = fetchRecords(sql);
+            if (!result.isEmpty()) {
+                id = Integer.parseInt(result.get(0).get("id").toString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return id;
+    }
+
 }

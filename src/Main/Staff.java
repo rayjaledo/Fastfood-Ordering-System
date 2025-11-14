@@ -38,6 +38,12 @@ public class Staff {
                         break;
                     }
 
+                    String currentStatus = (String) orderExist.get(0).get("status");
+                    if ("Served".equalsIgnoreCase(currentStatus) || "Completed".equalsIgnoreCase(currentStatus)) {
+                        System.out.println("Order already served or completed. Status cannot be updated.");
+                        break;
+                    }
+
                     System.out.println("Select new status:");
                     System.out.println("1. Preparing");
                     System.out.println("2. Served");
@@ -50,6 +56,7 @@ public class Staff {
                     System.out.println("Order updated!");
                     Main.viewOrders();
                     break;
+
                 case 3:
                     System.out.println("Exiting Staff Dashboard...");
                     return;
